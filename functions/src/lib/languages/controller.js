@@ -1,16 +1,29 @@
-const languages = require("./languages.json");
+const firebase = require("firebase-admin");
 
-function getAllLanguages(_req, res) {
-	return res.json({
-		success: true,
-	 	data: languages
-	});
+firebase.initializeApp({
+	credential: firebase.credential.applicationDefault()
+});
+const db = firebase.firestore();
+
+const collection = db.collection("languages")
+
+async function getAllLanguages(_req, res) {
+	try {
+		const languages = await collection.get();
+		return res.json({
+			success: true,
+			data: languages
+		});
+	}catch(error) {
+		return res.status(500).json({ success: false, error: error });
+	}
 }
 
-function getLanguage(req, res) {
+async function getLanguage(req, res) {
 	const requiredLang = req.params.language;
-	const lang = languages.filter((lang) => lang.id === requiredLang);
-	const exists = languages.length > 0;
+
+	const lang = await collection.where('id', '==', requiredLang).get();
+	const exists = lang.length > 0;
 
 	return res
 		.status(exists ? 200 : 404)
@@ -20,7 +33,20 @@ function getLanguage(req, res) {
 		})
 }
 
+async function addLanguage(req, res) {
+	const { id, name } = req.body;
+	const data = {
+		id: id,
+		name: name
+	}
+
+	const ref = await collection.add(data);
+
+	return res.status(201);
+}
+
 module.exports = {
 	getAllLanguages,
-	getLanguage
+	getLanguage,
+	addLanguage,
 };
