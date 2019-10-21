@@ -9,7 +9,14 @@ const collection = db.collection("languages")
 
 async function getAllLanguages(_req, res) {
 	try {
-		const languages = await collection.get();
+		const languagesQuery = await collection.get();
+		const languages = [];
+
+		languagesQuery.forEach(item => {
+			const data = item.data();
+			languages.push({id: data.id, name: data.name})
+		});
+
 		return res.json({
 			success: true,
 			data: languages
@@ -41,8 +48,9 @@ async function addLanguage(req, res) {
 	}
 
 	const ref = await collection.add(data);
+	const item = await ref.get();
 
-	return res.status(201);
+	return res.status(200).json({id: item.id, name: item.name});
 }
 
 module.exports = {
